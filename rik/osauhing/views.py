@@ -5,7 +5,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib.admin.widgets import AdminDateWidget
 from django.urls import reverse_lazy
 from .forms import CreateOsauhingForm, CreatePhysicalPartnerForm, CreateLegalPartnerForm, LegalPartnerFormset, PhysicalPartnerFormset
-from .models import Osauhing, PhysicalPartner, LegalPartner
+from .models import Osauhing, PhysicalPartner, LegalPartner, InitialLegalPartner, InitialPhysicalPartner
 import inspect
 
 class OsauhingList(ListView):
@@ -23,17 +23,17 @@ class OsauhingList(ListView):
             final_object_list = object_list.filter(name__icontains=name)
             final_object_list = final_object_list | object_list.filter(registry_code__icontains=name)
             for legalpartner in self.legalpartners:
-                if legalpartner.name.lower().__contains__(name.lower()):
+                if legalpartner.initial_legal_partner.name.lower().__contains__(name.lower()):
                     final_object_list = final_object_list | object_list.filter(id=legalpartner.parent_osauhing_id)
-                if legalpartner.registry_code.lower().__contains__(name.lower()):
+                if legalpartner.initial_legal_partner.registry_code.lower().__contains__(name.lower()):
                     final_object_list = final_object_list | object_list.filter(id=legalpartner.parent_osauhing_id)
             for physicalpartner in self.physicalpartners:
-                full_name = physicalpartner.first_name + " " + physicalpartner.last_name
-                if physicalpartner.first_name.lower().__contains__(name.lower()):
+                full_name = physicalpartner.initial_physical_partner.first_name + " " + physicalpartner.initial_physical_partner.last_name
+                if physicalpartner.initial_physical_partner.first_name.lower().__contains__(name.lower()):
                     final_object_list = final_object_list | object_list.filter(id=physicalpartner.parent_osauhing_id)
-                if physicalpartner.last_name.lower().__contains__(name.lower()):
+                if physicalpartner.initial_physical_partner.last_name.lower().__contains__(name.lower()):
                     final_object_list = final_object_list | object_list.filter(id=physicalpartner.parent_osauhing_id)
-                if physicalpartner.personal_code.lower().__contains__(name.lower()):
+                if physicalpartner.initial_physical_partner.personal_code.lower().__contains__(name.lower()):
                     final_object_list = final_object_list | object_list.filter(id=physicalpartner.parent_osauhing_id)
                 if full_name.lower().__contains__(name.lower()):
                     final_object_list = final_object_list | object_list.filter(id=physicalpartner.parent_osauhing_id)
@@ -50,63 +50,50 @@ class OsauhingView(DetailView):
         context['legalpartners'] = LegalPartner.objects.filter(parent_osauhing_id=self.object.id)
         context['physicalpartners'] = PhysicalPartner.objects.filter(parent_osauhing_id=self.object.id)
         return context
-def unique(list1):
-
-# initialize a null list
-    unique_list = []
-
-    # traverse for all elements
-    for x in list1:
-        match = False
-        # check if exists in unique_list or not
-        xname = str(x.name)
-        for y in unique_list:
-            yname = str(y.name)
-            if xname == yname:
-                match = True
-                break
-        if match == False:
-            unique_list.append(x)
-            match == False
-    return unique_list
 
 class OsauhingCreate(CreateView):
     model = Osauhing
 
-    def form_valid(self, form):
-        result = super(OsauhingCreate, self).form_valid(form)
-        legalparnters_formset = LegalPartnerFormset(form.data, instance=self.object, prefix='legalpartners_formset')
-        physicalpartners_formset = PhysicalPartnerFormset(form.data, instance=self.object,
-                                                          prefix='physicalpartners_formset')
+    def form_valid(self, form): 
+
         partner_exist = False
         total_ownership = 0
-        for legal_partner in legalparnters_formset.cleaned_data:
-            total_ownership += legal_partner['ownership']
-            for existing_legal_partner in LegalPartner.objects.all():
-                if legal_partner['name'] == existing_legal_partner.name and legal_partner['registry_code'] == existing_legal_partner.registry_code:
-                    partner_exist = True
-                    break
-            if partner_exist == False:
-                form.add_error(None, 'Legal partner with name ' + legal_partner['name'] + ' and registry code ' + legal_partner['registry_code'] + ' does not exist')
+        temp_legal_partners = list()
+        temp_physical_partners = list()
+        for x in range(0, int(form.data['legalpartners_formset-TOTAL_FORMS'])):
+            total_ownership += int(form.data['legalpartners_formset-' + str(x) + '-ownership'])
+            if form.data['legalpartners_formset-' + str(x) + '-initial_legal_partner'] in temp_legal_partners:
+                form.add_error(None, 'Osanikud ei tohi korduda.')
+                return super(OsauhingCreate, self).form_invalid(form)
+            temp_legal_partners.append(form.data['legalpartners_formset-' + str(x) + '-initial_legal_partner'])
+        for x in range(0, int(form.data['physicalpartners_formset-TOTAL_FORMS'])):
+            total_ownership += int(form.data['physicalpartners_formset-' + str(x) + '-ownership'])
+            if form.data['physicalpartners_formset-' + str(x) + '-initial_physical_partner'] in temp_physical_partners:
+                form.add_error(None, 'Osanikud ei tohi korduda.')
                 return super().form_invalid(form)
-            partner_exist = False
-        if total_ownership != form.cleaned_data['capital']:
-            form.add_error(None, 'Total ownership of legal partners is not equal to osauhing capital')
-            return super().form_invalid(form)
-
-        if legalparnters_formset.is_valid():    
-            legalpartners = legalparnters_formset.save()
+            temp_physical_partners.append(form.data['physicalpartners_formset-' + str(x) + '-initial_physical_partner'])
+        if total_ownership != int(form.data['capital']):
+            form.add_error(None, 'Osanike osade suuruste summa peab olema võrdne osaühingu kogukapitali suurusega.')
+            return super().form_invalid(form) 
+        result = super(OsauhingCreate, self).form_valid(form)
+        legalpartners_formset = LegalPartnerFormset(form.data, instance=self.object, prefix='legalpartners_formset')
+        physicalpartners_formset = PhysicalPartnerFormset(form.data, instance=self.object, prefix='physicalpartners_formset')
+                
+        
+        if legalpartners_formset.is_valid():          
+            legalpartners = legalpartners_formset.save()
         if physicalpartners_formset.is_valid():
             physicalpartners = physicalpartners_formset.save()
+
         return result
 
     def get_context_data(self, **kwargs):
         context = super(OsauhingCreate, self).get_context_data(**kwargs)
         context['legalpartners_formset'] = LegalPartnerFormset(prefix='legalpartners_formset')
         context['physicalpartners_formset'] = PhysicalPartnerFormset(prefix='physicalpartners_formset')
-        context['all_legal_partners'] = unique(LegalPartner.objects.all())
-        context['all_physical_partners'] = PhysicalPartner.objects.all()
-        context['temp_legal_partners'] = ['']
+        context['all_legal_partners'] = InitialLegalPartner.objects.all()
+        context['all_physical_partners'] = InitialPhysicalPartner.objects.all()
+
         return context
     #Add validation for formsets
     def save(self, commit=True):
@@ -116,16 +103,16 @@ class OsauhingCreate(CreateView):
     template = 'osauhing/osauhing_form.html'
     # , 'physical_partners', 'legal_partners'
 
-    success_url = reverse_lazy('osauhing_list')
+    def get_success_url(self):
+        return reverse_lazy('osauhing_view', kwargs={'pk': self.object.pk})
 
 
 class OsauhingUpdate(UpdateView):
     model = Osauhing
-    form_class = CreateOsauhingForm
-    # , 'physical_partners', 'legal_partners'
-    template = 'osauhing/osauhing_form.html'
-    success_url = reverse_lazy('osauhing_list')
 
+#
+    form_class = CreateOsauhingForm
+    template = 'osauhing/osauhing_form.html'
 
 class OsauhingDelete(DeleteView):
     model = Osauhing
