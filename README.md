@@ -8,4 +8,4 @@
 - Password: password
 <h3>This project relational schema</h3>
 
-![image](https://user-images.githubusercontent.com/88944850/213315400-38b67f38-9cf8-4382-a10e-364195786be4.png)
+![image](https://user-images.githubusercontent.com/88944850/213316377-e6cded01-498e-42e3-88e3-8fb486f5f4d3.png)
