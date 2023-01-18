@@ -1,0 +1,177 @@
+<h1>Osauhing Edit</h1>
+<style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    #myInput {
+      background-image: url('/css/searchicon.png');
+      background-position: 10px 12px;
+      background-repeat: no-repeat;
+      width: 100%;
+      font-size: 16px;
+      padding: 12px 20px 12px 40px;
+      border: 1px solid #ddd;
+      margin-bottom: 12px;
+    }
+    
+    #myUL {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    #myUL li a {
+      border: 1px solid #ddd;
+      margin-top: -1px; /* Prevent double borders */
+      background-color: #f6f6f6;
+      padding: 12px;
+      text-decoration: none;
+      font-size: 18px;
+      color: black;
+      display: block
+    }
+    
+    #myUL li a:hover:not(.header) {
+      background-color: #eee;
+    }
+    </style>
+<script type="text/javascript" src="{{ STATIC_URL }} /static/jquery-3.6.3.js"></script> 
+<script type="text/javascript">
+
+var legal_partners_list = [];
+{% for legal_partner in all_legal_partners %}
+    legal_partners_list.push("{{ legal_partner }}");
+
+{% endfor %}
+console.log(legal_partners_list);
+$(function() {
+$('form').delegate('#btn_add_legal_partner', 'click', function() {
+    {% for legal_partner in all_legal_partners %}
+        if (global_legal_partner === "{{ legal_partner }}") {
+            global_legal_partner_registry_code = "{{ legal_partner.registry_code }}";
+        }
+    
+    {% endfor %}
+    var $total_legal_partners = $(':input[name=legalpartners_formset-TOTAL_FORMS]');
+    legal_partner_form_count = parseInt($total_legal_partners.val());
+    $total_legal_partners.val(legal_partner_form_count + 1);
+    option_list = '';
+    for(var i = 0; i < legal_partners_list.length; i++) {
+        option_list += '<option value="' + legal_partners_list[i] + '">' + legal_partners_list[i] + '</option>';
+    }
+    $new_legal_partner_form = $(
+        '<fieldset>' +
+        '<legend>Legal partner' + legal_partner_form_count + '</legend>' +
+        '<div><label for="id_legalpartners_formset-' + legal_partner_form_count + 
+        '-name">Name:</label> <input type="text" value=' + global_legal_partner +' readonly="readonly" name="legalpartners_formset-' + legal_partner_form_count + 
+        '-name" id="id_legalpartners_formset-' + legal_partner_form_count + '-name">'  +
+         '</div>' +
+        '<div><label for="id_legalpartners_formset-' + legal_partner_form_count +
+        '-registry_code">Registry code:</label> <input type="text" value=' + global_legal_partner_registry_code +' readonly="readonly" name="legalpartners_formset-' + legal_partner_form_count +
+        '-registry_code" id="id_legalpartners_formset-' + legal_partner_form_count + '-registry_code"></div>' +
+        '<div><label for="id_legalpartners_formset-' + legal_partner_form_count +
+        '-ownership">Ownership:</label> <input type="text" name="legalpartners_formset-' + legal_partner_form_count +
+        '-ownership" id="id_legalpartners_formset-' + legal_partner_form_count + '-ownership"></div>' +
+        '<div><label for="id_legalpartners_formset-' + legal_partner_form_count +
+        '-isFounder">Is founder:</label> <input type="checkbox" name="legalpartners_formset-' + legal_partner_form_count +
+        '-isFounder" id="id_legalpartners_formset-' + legal_partner_form_count + '-isFounder"></div>' +
+        '</fieldset>'
+    
+    );
+    
+    $('#legalpartners').prepend($new_legal_partner_form)
+
+})
+
+$('form').delegate('#btn_add_physical_partner', 'click', function() {
+    var $total_physical_partners = $(':input[name=physicalpartners_formset-TOTAL_FORMS]');
+    physical_partner_form_count = parseInt($total_physical_partners.val());
+    $total_physical_partners.val(physical_partner_form_count + 1);
+    $new_physical_partner_form = $(
+    '<fieldset>' +
+    '<legend>Physical partner' + physical_partner_form_count + '</legend>' +
+    '<div><label for="id_physicalpartners_formset-' + physical_partner_form_count +
+    '-first_name">First name:</label> <input type="text" name="physicalpartners_formset-' + physical_partner_form_count +
+    '-first_name" id="id_physicalpartners_formset-' + physical_partner_form_count + '-first_name"></div>' +
+    '<div><label for="id_physicalpartners_formset-' + physical_partner_form_count +
+    '-last_name">Last name:</label> <input type="text" name="physicalpartners_formset-' + physical_partner_form_count +
+    '-last_name" id="id_physicalpartners_formset-' + physical_partner_form_count + '-last_name"></div>' +
+    '<div><label for="id_physicalpartners_formset-' + physical_partner_form_count +
+    '-personal_code">Personal code:</label> <input type="text" name="physicalpartners_formset-' + physical_partner_form_count +
+    '-personal_code" id="id_physicalpartners_formset-' + physical_partner_form_count + '-personal_code"></div>' +
+    '<div><label for="id_physicalpartners_formset-' + physical_partner_form_count +
+    '-ownership">Ownership:</label> <input type="text" name="physicalpartners_formset-' + physical_partner_form_count +
+    '-ownership" id="id_physicalpartners_formset-' + physical_partner_form_count + '-ownership"></div>' +
+    '<div><label for="id_physicalpartners_formset-' + physical_partner_form_count +
+    '-isFounder">Is founder:</label> <input type="checkbox" name="physicalpartners_formset-' + physical_partner_form_count +
+    '-isFounder" id="id_physicalpartners_formset-' + physical_partner_form_count + '-isFounder"></div>' +
+    '</fieldset>'
+    );
+        
+    $('#physicalpartners').prepend($new_physical_partner_form)
+})
+
+
+});
+
+
+</script>
+
+<form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    {{ legalpartners_formset.management_form }}
+    {% for form in legalpartners_formset %}
+        {{ form.as_p }}
+{% endfor %}
+    <div id="legalpartners"> 
+    </div>
+    
+
+    <div id="physicalpartners">
+    </div>
+    
+    <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for names.." title="Type in a name">
+    <ul id="myUL">
+
+    {% for legal_partner in all_legal_partners %}
+    
+
+
+    
+    <li id="myli"><a href="#" id="mya">{{ legal_partner }}</a>
+        <p><input type="button" value="Add legal partner" onclick="add_legal_partner_info('{{legal_partner}}')"  id="btn_add_legal_partner"/></p>
+    </li>
+
+{% endfor %}
+</ul>
+{{ physicalpartners_formset.management_form }}
+{% for form in physicalpartners_formset %}
+    {{ form.as_p }}
+{% endfor %}
+<p><input type="button" value="Add physical partner"  id="btn_add_physical_partner-"/></p>
+    <input type="submit" value="Submit" />
+    <script>
+        function myFunction() {
+            var input, filter, ul, li, a, i, txtValue;
+            input = document.getElementById("myInput");
+            filter = input.value.toUpperCase();
+            ul = document.getElementById("myUL");
+            li = ul.getElementsByTagName("li");
+            for (i = 0; i < li.length; i++) {
+                a = li[i].getElementsByTagName("a")[0];
+                txtValue = a.textContent || a.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    li[i].style.display = "";
+                } else {
+                    li[i].style.display = "none";
+                }
+            }
+        }
+        function add_legal_partner_info(legal_partner){
+            console.log(legal_partner);
+            global_legal_partner = legal_partner;
+    
+        }
+        </script>
+</form>

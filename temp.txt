@@ -1,0 +1,119 @@
+    def form_valid(self, form):
+        result = super(OsauhingCreate, self).form_valid(form)
+        legalparnters_formset = LegalPartnerFormset(form.data, instance=self.object, prefix='legalpartners_formset')
+        physicalpartners_formset = PhysicalPartnerFormset(form.data, instance=self.object,
+                                                          prefix='physicalpartners_formset')
+        if legalparnters_formset.is_valid():
+            legalpartners = legalparnters_formset.save()
+        if physicalpartners_formset.is_valid():
+            physicalpartners = physicalpartners_formset.save()
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super(OsauhingCreate, self).get_context_data(**kwargs)
+        context['legalpartners_formset'] = LegalPartnerFormset(prefix='legalpartners_formset')
+        context['physicalpartners_formset'] = PhysicalPartnerFormset(prefix='physicalpartners_formset')
+        return context
+
+
+
+<script type="text/javascript">
+$(function() {
+$('form').delegate('#btn_add_legal_partner', 'click', function() {
+
+    var $total_legal_partners = $(':input[name=legalpartners_formset-TOTAL_FORMS]');
+    legal_partner_form_count = parseInt($total_legal_partners.val());
+    $total_legal_partners.val(legal_partner_form_count + 1);
+    $new_legal_partner_form = $(
+        '<fieldset>' +
+        '<legend>Legal partner' + legal_partner_form_count + '</legend>' +
+        '<div><label for="id_legalpartners_formset-' + legal_partner_form_count + 
+        '-name">Name:</label> <input type="text" name="legalpartners_formset-' + legal_partner_form_count + 
+        '-name" id="id_legalpartners_formset-' + legal_partner_form_count + '-name"></div>' +
+        '<div><label for="id_legalpartners_formset-' + legal_partner_form_count +
+        '-registry_code">Registry code:</label> <input type="text" name="legalpartners_formset-' + legal_partner_form_count +
+        '-registry_code" id="id_legalpartners_formset-' + legal_partner_form_count + '-registry_code"></div>' +
+        '<div><label for="id_legalpartners_formset-' + legal_partner_form_count +
+        '-ownership">Ownership:</label> <input type="text" name="legalpartners_formset-' + legal_partner_form_count +
+        '-ownership" id="id_legalpartners_formset-' + legal_partner_form_count + '-ownership"></div>' +
+        '<div><label for="id_legalpartners_formset-' + legal_partner_form_count +
+        '-isFounder">Is founder:</label> <input type="checkbox" name="legalpartners_formset-' + legal_partner_form_count +
+        '-isFounder" id="id_legalpartners_formset-' + legal_partner_form_count + '-isFounder"></div>' +
+        '</fieldset>'
+    
+    );
+    
+    $('#legalpartners').prepend($new_legal_partner_form)
+
+})
+
+$('form').delegate('#btn_add_physical_partner', 'click', function() {
+    var $total_physical_partners = $(':input[name=physicalpartners_formset-TOTAL_FORMS]');
+    physical_partner_form_count = parseInt($total_physical_partners.val());
+    $total_physical_partners.val(physical_partner_form_count + 1);
+    $new_physical_partner_form = $(
+    '<fieldset>' +
+    '<legend>Physical partner' + physical_partner_form_count + '</legend>' +
+    '<div><label for="id_physicalpartners_formset-' + physical_partner_form_count +
+    '-first_name">First name:</label> <input type="text" name="physicalpartners_formset-' + physical_partner_form_count +
+    '-first_name" id="id_physicalpartners_formset-' + physical_partner_form_count + '-first_name"></div>' +
+    '<div><label for="id_physicalpartners_formset-' + physical_partner_form_count +
+    '-last_name">Last name:</label> <input type="text" name="physicalpartners_formset-' + physical_partner_form_count +
+    '-last_name" id="id_physicalpartners_formset-' + physical_partner_form_count + '-last_name"></div>' +
+    '<div><label for="id_physicalpartners_formset-' + physical_partner_form_count +
+    '-personal_code">Personal code:</label> <input type="text" name="physicalpartners_formset-' + physical_partner_form_count +
+    '-personal_code" id="id_physicalpartners_formset-' + physical_partner_form_count + '-personal_code"></div>' +
+    '<div><label for="id_physicalpartners_formset-' + physical_partner_form_count +
+    '-ownership">Ownership:</label> <input type="text" name="physicalpartners_formset-' + physical_partner_form_count +
+    '-ownership" id="id_physicalpartners_formset-' + physical_partner_form_count + '-ownership"></div>' +
+    '<div><label for="id_physicalpartners_formset-' + physical_partner_form_count +
+    '-isFounder">Is founder:</label> <input type="checkbox" name="physicalpartners_formset-' + physical_partner_form_count +
+    '-isFounder" id="id_physicalpartners_formset-' + physical_partner_form_count + '-isFounder"></div>' +
+    '</fieldset>'
+    );
+
+    $('#physicalpartners').prepend($new_physical_partner_form)
+})
+
+
+});
+
+</script>
+
+
+
+    def get_context_data(self, **kwargs):
+        context = super(OsauhingView, self).get_context_data(**kwargs)
+        context['legalpartners'] = LegalPartner.objects.filter(parent_osauhing_id=self.object.id)
+        context['physicalpartners'] = PhysicalPartner.objects.filter(parent_osauhing_id=self.object.id)
+        return context
+
+
+
+    legalpartners = LegalPartner.objects.all()
+    physicalpartners = PhysicalPartner.objects.all()
+
+    def get_queryset(self):
+        name = self.request.GET.get('search')
+        object_list = self.model.objects.all()
+        final_object_list = self.model.objects.all()
+        if name:
+            # Make filter multiple parameters with OR
+            final_object_list = object_list.filter(name__icontains=name)
+            final_object_list = final_object_list | object_list.filter(registry_code__icontains=name)
+            for legalpartner in self.legalpartners:
+                if legalpartner.name.lower().__contains__(name.lower()):
+                    final_object_list = final_object_list | object_list.filter(id=legalpartner.parent_osauhing_id)
+                if legalpartner.registry_code.lower().__contains__(name.lower()):
+                    final_object_list = final_object_list | object_list.filter(id=legalpartner.parent_osauhing_id)
+            for physicalpartner in self.physicalpartners:
+                full_name = physicalpartner.first_name + ' ' + physicalpartner.last_name
+                if full_name.lower().__contains__(name.lower()):
+                    final_object_list = final_object_list | object_list.filter(id=physicalpartner.parent_osauhing_id)
+                if physicalpartner.first_name.lower().__contains__(name.lower()):
+                    final_object_list = final_object_list | object_list.filter(id=physicalpartner.parent_osauhing_id)
+                if physicalpartner.last_name.lower().__contains__(name.lower()):
+                    final_object_list = final_object_list | object_list.filter(id=physicalpartner.parent_osauhing_id)
+                if physicalpartner.personal_code.lower().__contains__(name.lower()):
+                    final_object_list = final_object_list | object_list.filter(id=physicalpartner.parent_osauhing_id)
+        return final_object_list

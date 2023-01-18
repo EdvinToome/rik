@@ -1,0 +1,26 @@
+<h1>Osauhing details</h1>
+<h2>Name: {{object.name}}</h2>
+<p>Registry code: {{ osauhing.registry_code }}</p>
+<p>Foundation date: {{ osauhing.foundation_date }}</p>
+<p>Capital: {{ osauhing.capital }}</p>
+
+{% for partner in legalpartners %}
+  {% if partner.parent_osauhing == osauhing %}
+    <h3>Legal partner</h3>
+    <h4>Name: {{partner.name}}</h4>
+    <p>Registry code: {{ partner.registry_code }}</p>
+    <p>Foundation date: {{ partner.foundation_date }}</p>
+    <p>Ownership: {{ partner.ownership }}</p>
+    <p>isFounder: {{ partner.isFounder }}</p>
+  {% endif %}
+{% endfor %}
+
+{% for partner in physicalpartners %}
+  {% if partner.parent_osauhing == osauhing%}
+  <h3>Physical partner</h3>
+  <h4>Name: {{partner.first_name}} {{partner.last_name}}</h4>
+  <p>Personal code: {{ partner.personal_code }}</p>
+  <p>Ownership: {{ partner.ownership }}</p>
+  <p>isFounder: {{ partner.isFounder }}</p>
+  {% endif %}
+{% endfor %}

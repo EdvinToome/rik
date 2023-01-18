@@ -1,0 +1,35 @@
+
+<h1>Osauhingud</h1>
+
+
+
+<form action="" method="get">
+    <input type="text" name="search" />
+    <input type="submit" value="Search" />
+</form>
+
+
+
+<table border="1">
+<thead>
+    <tr>
+    <th>Name</th>
+    <th>View</th>
+    <th>Delete</th>
+    </tr>
+</thead>
+<tbody>
+
+    {% for osauhing in object_list %}
+    <tr>
+    <td>{{ osauhing.name }}</td>
+
+    <td><a href="{% url "osauhing_view" osauhing.id %}">view</a></td>
+
+    <td><a href="{% url "osauhing_delete" osauhing.id %}">delete</a></td>
+    </tr>
+    {% endfor %}
+</tbody>
+</table>
+
+<a href="{% url "osauhing_new" %}">New</a>
