@@ -12,14 +12,14 @@ class OsauhingList(ListView):
     model = Osauhing
     legalpartners = LegalPartner.objects.all()
     physicalpartners = PhysicalPartner.objects.all()
-
+#Search for osauhing by name or registry code or partner name or partner code
     def get_queryset(self):
         name = self.request.GET.get('search')
         object_list = self.model.objects.all()
         final_object_list = self.model.objects.all()
 
         if name:
-            # Make filter multiple parameters with OR
+
             final_object_list = object_list.filter(name__icontains=name)
             final_object_list = final_object_list | object_list.filter(registry_code__icontains=name)
             for legalpartner in self.legalpartners:
@@ -55,26 +55,41 @@ class OsauhingCreate(CreateView):
     model = Osauhing
 
     def form_valid(self, form): 
-
-        partner_exist = False
+        partner_exist = True
         total_ownership = 0
         temp_legal_partners = list()
         temp_physical_partners = list()
+        #Check if osauhing name or registry code already exists
+        if(form.data['name'] in list(Osauhing.objects.all().values_list('name', flat=True))):
+            form.add_error(None, 'Osauhingu nimi ei tohi korduda.')
+            return super().form_invalid(form)
+        if(form.data['registry_code'] in list(Osauhing.objects.all().values_list('registry_code', flat=True))):
+            form.add_error(None, 'Osauhingu registrikood ei tohi korduda.')
+            return super().form_invalid(form)
+        #Check if partner exists, it does not repeat and ownership is 100%
         for x in range(0, int(form.data['legalpartners_formset-TOTAL_FORMS'])):
             total_ownership += int(form.data['legalpartners_formset-' + str(x) + '-ownership'])
             if form.data['legalpartners_formset-' + str(x) + '-initial_legal_partner'] in temp_legal_partners:
                 form.add_error(None, 'Osanikud ei tohi korduda.')
                 return super(OsauhingCreate, self).form_invalid(form)
+            if int(form.data['legalpartners_formset-' + str(x) + '-initial_legal_partner']) not in list(InitialLegalPartner.objects.all().values_list('id', flat=True)):
+                partner_exist = False
             temp_legal_partners.append(form.data['legalpartners_formset-' + str(x) + '-initial_legal_partner'])
         for x in range(0, int(form.data['physicalpartners_formset-TOTAL_FORMS'])):
             total_ownership += int(form.data['physicalpartners_formset-' + str(x) + '-ownership'])
             if form.data['physicalpartners_formset-' + str(x) + '-initial_physical_partner'] in temp_physical_partners:
                 form.add_error(None, 'Osanikud ei tohi korduda.')
                 return super().form_invalid(form)
+            if int(form.data['physicalpartners_formset-' + str(x) + '-initial_physical_partner']) not in list(InitialPhysicalPartner.objects.all().values_list('id', flat=True)):
+                partner_exist = False           
             temp_physical_partners.append(form.data['physicalpartners_formset-' + str(x) + '-initial_physical_partner'])
         if total_ownership != int(form.data['capital']):
             form.add_error(None, 'Osanike osade suuruste summa peab olema võrdne osaühingu kogukapitali suurusega.')
-            return super().form_invalid(form) 
+            return super().form_invalid(form)
+        if (partner_exist == False):
+            form.add_error(None, 'Osanikku ei eksisteeri.')
+            return super().form_invalid(form)
+        #Save osauhing and partners
         result = super(OsauhingCreate, self).form_valid(form)
         legalpartners_formset = LegalPartnerFormset(form.data, instance=self.object, prefix='legalpartners_formset')
         physicalpartners_formset = PhysicalPartnerFormset(form.data, instance=self.object, prefix='physicalpartners_formset')
