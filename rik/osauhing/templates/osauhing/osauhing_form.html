@@ -8,6 +8,7 @@
 <h1>Osauhing Edit</h1>
 <script type="text/javascript">
 $(function() {
+// Function to create a new formset form for legal partner
 $('form').delegate('#btn_add_legal_partner', 'click', function() {
     {% for legal_partner in all_legal_partners %}
         if (global_legal_partner === "{{ legal_partner }}") {
@@ -39,7 +40,7 @@ $('form').delegate('#btn_add_legal_partner', 'click', function() {
     $('#legalpartners').prepend($new_legal_partner_form)
 
 })
-
+// Function to create a new formset form for physical partner
 $('form').delegate('#btn_add_physical_partner', 'click', function() {
     {% for physical_partner in all_physical_partners %}
     if (global_physical_partner === "{{ physical_partner }}") {
@@ -119,6 +120,7 @@ $('form').delegate('#btn_add_physical_partner', 'click', function() {
             myFunction();
             myPhysicalFunction();
         };
+        // Functions for search bar
         function myFunction() {
             var input, filter, ul, li, a, i, txtValue;
             input = document.getElementById("myInput");
@@ -181,6 +183,7 @@ $('form').delegate('#btn_add_physical_partner', 'click', function() {
             }
 
         }
+        // Functions for adding legal and physical partners
         function add_legal_partner_info(legal_partner){
             console.log(legal_partner);
             global_legal_partner = legal_partner;
