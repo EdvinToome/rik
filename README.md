@@ -1,5 +1,6 @@
 <h3>To run this Django project</h3>
 
+- Change dir to rik <b>cd rik</b>
 - Enter venv: <b>source rik/bin/activate</b>
 - Run the server: <b>python manage.py runserver</b>
 - Go to localhost: <b>http://127.0.0.1:8000/</b>
